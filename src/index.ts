@@ -2,7 +2,6 @@
 
 import { routeAgentRequest } from "agents";
 import { authenticateRequest } from "./auth/authorization.js";
-export { CodemodeRuntime } from "agents/browser";
 export { TriageAgent } from "./agent/triage.js";
 export { SweepWorkflow } from "./workflows/sweep.js";
 export { TargetWorkflow } from "./workflows/target.js";

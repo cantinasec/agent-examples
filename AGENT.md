@@ -28,6 +28,7 @@ Outbound probes and browser renderings **fail closed** if the hostname is not ac
 
 ## Pointers
 
+- Cloudflare product → job → principal role: `README.md` (table under **What you will build**)
 - Database schema & tables: `migrations/0001_init.sql`, `migrations/0002_hardening.sql`
 - MCP tools & role permissions (`read`, `scan`, `admin`): `src/mcp/tools.ts`, `src/auth/principals.ts`
 - Scan workflow steps & AI classification: `src/workflows/target.ts`

@@ -8,11 +8,6 @@
     "binding": "BROWSER",
     "remote": true
   },
-  "worker_loaders": [
-    {
-      "binding": "LOADER"
-    }
-  ],
   "ai": {
     "binding": "AI"
   },
@@ -38,17 +33,13 @@
       {
         "name": "TRIAGE_AGENT",
         "class_name": "TriageAgent"
-      },
-      {
-        "name": "CodemodeRuntime",
-        "class_name": "CodemodeRuntime"
       }
     ]
   },
   "migrations": [
     {
       "tag": "v1",
-      "new_classes": ["TriageAgent", "CodemodeRuntime"]
+      "new_sqlite_classes": ["TriageAgent"]
     }
   ],
   "workers_dev": false,

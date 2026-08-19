@@ -1,6 +1,7 @@
 {
   "name": "cloudflare-security-agent-walkthrough",
   "version": "0.1.0",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "build": "tsc --noEmit",
@@ -9,7 +10,6 @@
     "cf-typegen": "wrangler types"
   },
   "dependencies": {
-    "@cloudflare/codemode": "^0.5.1",
     "@modelcontextprotocol/server": "^2.0.0",
     "agents": "^0.20.1",
     "jose": "^6.2.8",

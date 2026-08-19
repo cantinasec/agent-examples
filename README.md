@@ -4,7 +4,7 @@ This tutorial builds a read-only agent that scans an explicitly approved set of 
 
 The repository contains the finished implementation. Follow the source in the order below if you want to build it yourself; skip to [Deploy your copy](#deploy-your-copy) if you only want to run it.
 
-Last locally verified: 2026-08-17 with Node.js 22 and the dependency versions in `package-lock.json`. Cloudflare deployment requires account-specific resources and cannot be verified by this repository's automated tests.
+Last locally verified: 2026-08-19 with Node.js 22 and the dependency versions in `package-lock.json`. Cloudflare deployment requires account-specific resources and cannot be verified by this repository's automated tests.
 
 ## What you will build
 
@@ -20,6 +20,21 @@ SweepWorkflow ──► TargetWorkflow ──► deterministic detectors
 Cloudflare Access ──► /mcp ──► list, scan, evidence, and triage tools
 ```
 
+Roles live in D1 `principals` (`read` < `scan` < `admin`). A higher role includes the lower ones. Cloudflare Access authenticates the caller; the Worker then maps that identity onto one of these roles before any tool runs.
+
+| Cloudflare product | Binding | Job | Principal role |
+| --- | --- | --- | --- |
+| Workers | `cloudflare-security-agent-walkthrough` | Serves `/health`, `/mcp`, `/agents/*`. Cron `0 3 * * *` starts expire then sweep. | Any Access identity that also exists in `principals` |
+| D1 | `DB` → `exposure-agent-db` | `targets`, `principals`, `findings`, `scans` | `read` lists; `scan` inserts scan rows; `admin` mutates scope and finding disposition |
+| R2 | `EVIDENCE` → `exposure-agent-evidence` | Screenshot blobs under `screenshots/{host}/…` | `read` via `get_evidence`; object writes happen inside `TargetWorkflow` |
+| Workflows | `SWEEP_WORKFLOW`, `TARGET_WORKFLOW`, `EXPIRE_WORKFLOW` | Nightly fan-out, one durable scan per host, retire expired scope | `scan` starts and polls `TargetWorkflow`; cron starts sweep and expire |
+| Durable Objects | `TRIAGE_AGENT` | Interactive triage agent | Same `read` / `scan` / `admin` checks as MCP |
+| Workers AI | `AI` | `@cf/meta/llama-3.3-70b-instruct-fp8-fast` advisory review when detectors return nothing | Invoked only from `TargetWorkflow` (`scan` or cron). Not an MCP tool. |
+| Browser Run | `BROWSER` (`remote: true`) | `quickAction` content, markdown, and screenshot | `TargetWorkflow` (`scan` or cron); TriageAgent browse (`read`) |
+| Access | `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD` | Verifies `Cf-Access-Jwt-Assertion` on `/mcp` and `/agents/*` | Required for every role. Email or service-token `common_name` must match `principals.client_id`. |
+
+D1 and R2 are not in the checked-in `wrangler.jsonc`. The deploy steps below create `exposure-agent-db` and `exposure-agent-evidence` and write those bindings.
+
 The safety boundary is the D1 target registry. Every scan starts by checking that the exact hostname is active and its authorization has not expired. Probes use GET requests and manual HTTP redirects; the agent does not submit forms, guess credentials, fuzz inputs, or send exploit payloads.
 
 ## Before you start
@@ -27,8 +42,8 @@ The safety boundary is the D1 target registry. Every scan starts by checking tha
 You need:
 
 - Node.js 22.
-- A Cloudflare account that can create Workers, Workflows, D1 databases, R2 buckets, Browser Run bindings, Workers AI bindings, and Access applications.
-- A DNS zone in that account for the custom hostname protecting `/mcp` with Cloudflare Access.
+- A Cloudflare account that can create Workers, Workflows, D1 databases, R2 buckets, Browser Run bindings, Workers AI bindings, and Access applications. The Workers Free plan covers every binding this Worker uses. R2 requires completing the R2 subscription flow, which includes free monthly usage. On the Workers Free plan, Browser Run allows 10 minutes of browser time per day, which is the practical cap on how many hosts one nightly sweep can render.
+- An active Cloudflare zone in that account for the custom hostname protecting `/mcp` with Cloudflare Access. `workers_dev` is `false`, so there is no `workers.dev` fallback hostname.
 - Written authorization for every hostname you add to the target registry.
 
 Install the locked dependencies and run the local checks:
@@ -183,7 +198,7 @@ npx wrangler r2 bucket list
 
 Verify: the list includes `exposure-agent-evidence`, matching the `EVIDENCE` binding in `wrangler.jsonc`.
 
-Regenerate the Worker environment types after both bindings exist:
+Regenerate the Worker environment types after both bindings exist. Running `cf-typegen` before the `DB` and `EVIDENCE` bindings are in `wrangler.jsonc` overwrites the checked-in `worker-configuration.d.ts` with a version that omits them, and `npm run typecheck` then fails on every `env.DB` reference:
 
 ```bash
 npm run cf-typegen

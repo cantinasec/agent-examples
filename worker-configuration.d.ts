@@ -4,7 +4,6 @@
 interface __BaseEnv_Env {
 	EVIDENCE: R2Bucket;
 	DB: D1Database;
-	LOADER: WorkerLoader;
 	BROWSER: BrowserRun;
 	AI: Ai;
 	ACCESS_TEAM_DOMAIN: string;
@@ -14,7 +13,6 @@ interface __BaseEnv_Env {
 	MAX_TARGET_EXPIRY_DAYS: "30";
 	DEFAULT_TARGET_EXPIRY_DAYS: "7";
 	TRIAGE_AGENT: DurableObjectNamespace<import("./src/index").TriageAgent>;
-	CodemodeRuntime: DurableObjectNamespace<import("./src/index").CodemodeRuntime>;
 	SWEEP_WORKFLOW: Workflow<Parameters<import("./src/index").SweepWorkflow['run']>[0]['payload']>;
 	TARGET_WORKFLOW: Workflow<Parameters<import("./src/index").TargetWorkflow['run']>[0]['payload']>;
 	EXPIRE_WORKFLOW: Workflow<Parameters<import("./src/index").ExpireWorkflow['run']>[0]['payload']>;
@@ -22,7 +20,7 @@ interface __BaseEnv_Env {
 declare namespace Cloudflare {
 	interface GlobalProps {
 		mainModule: typeof import("./src/index");
-		durableNamespaces: "TriageAgent" | "CodemodeRuntime";
+		durableNamespaces: "TriageAgent";
 	}
 	interface Env extends __BaseEnv_Env {}
 }
