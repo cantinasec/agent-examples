@@ -1,0 +1,63 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "cloudflare-security-agent-walkthrough",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-03-24",
+  "compatibility_flags": ["nodejs_compat"],
+  "browser": {
+    "binding": "BROWSER",
+    "remote": true
+  },
+  "ai": {
+    "binding": "AI"
+  },
+  "workflows": [
+    {
+      "name": "sweep-workflow",
+      "binding": "SWEEP_WORKFLOW",
+      "class_name": "SweepWorkflow"
+    },
+    {
+      "name": "target-workflow",
+      "binding": "TARGET_WORKFLOW",
+      "class_name": "TargetWorkflow"
+    },
+    {
+      "name": "expire-workflow",
+      "binding": "EXPIRE_WORKFLOW",
+      "class_name": "ExpireWorkflow"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "TRIAGE_AGENT",
+        "class_name": "TriageAgent"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["TriageAgent"]
+    }
+  ],
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "security-agent.example.com",
+      "custom_domain": true
+    }
+  ],
+  "triggers": {
+    "crons": ["0 3 * * *"]
+  },
+  "vars": {
+    "ACCESS_TEAM_DOMAIN": "your-team.cloudflareaccess.com",
+    "ACCESS_AUD": "replace-with-your-access-aud-tag",
+    "MCP_HOSTNAME": "security-agent.example.com",
+    "MCP_ORIGIN_HOSTNAME": "security-agent.example.com",
+    "MAX_TARGET_EXPIRY_DAYS": "30",
+    "DEFAULT_TARGET_EXPIRY_DAYS": "7"
+  }
+}
