@@ -4,7 +4,7 @@ import { WorkflowEntrypoint, WorkflowEvent, WorkflowStep } from "cloudflare:work
 import { assertInScope } from "../core/scope.js";
 import { resolveHostDoh, DnsResolutionResult } from "../core/doh.js";
 import { syncDetectorFindings, FindingInput } from "../core/findings.js";
-import { saveScreenshot } from "../core/evidence.js";
+import { saveScreenshot, redactHeaders, redactBodyValues } from "../core/evidence.js";
 import { runNoAuthGateDetector } from "../detectors/no-auth-gate.js";
 import { runUnauthAdminDetector } from "../detectors/unauth-admin.js";
 import { runLeakedArtifactDetector } from "../detectors/leaked-artifact.js";
@@ -20,6 +20,11 @@ const PROBE_PATHS = [
   "/.git/HEAD", "/.env", "/swagger.json", "/openapi.json", "/api-docs",
   "/actuator/health", "/actuator/env", "/server-status", "/.DS_Store", "/robots.txt",
 ];
+
+// Paths that return the target's own secrets. Step results are persisted
+// durably, so these bodies are masked before the step returns rather than
+// downstream in the detector.
+const CREDENTIAL_PATHS = new Set(["/.env", "/actuator/env"]);
 
 export class TargetWorkflow extends WorkflowEntrypoint<Env, TargetWorkflowParams> {
   async run(event: WorkflowEvent<TargetWorkflowParams>, step: WorkflowStep) {
@@ -67,7 +72,7 @@ export class TargetWorkflow extends WorkflowEntrypoint<Env, TargetWorkflowParams
           headers: { "User-Agent": "Mozilla/5.0 (ExposureAgent/1.0)" },
         });
       }
-      const headers = Object.fromEntries(resp.headers);
+      const headers = redactHeaders(Object.fromEntries(resp.headers));
       return { url: targetUrl, status: resp.status, headers, body: (await resp.text()).slice(0, 100000) };
     });
 
@@ -115,10 +120,12 @@ export class TargetWorkflow extends WorkflowEntrypoint<Env, TargetWorkflowParams
           method: "GET", redirect: "manual",
           headers: { "User-Agent": "Mozilla/5.0 (ExposureAgent/1.0)" },
         });
-        const headers = Object.fromEntries(resp.headers);
+        const headers = redactHeaders(Object.fromEntries(resp.headers));
+        const rawBody = (await resp.text()).slice(0, 20000);
         results.push({
           path, url: pathUrl, status: resp.status, headers,
-          body: (await resp.text()).slice(0, 20000), contentType: headers["content-type"] || "",
+          body: CREDENTIAL_PATHS.has(path) ? redactBodyValues(rawBody) : rawBody,
+          contentType: headers["content-type"] || "",
         });
       }
       return results;

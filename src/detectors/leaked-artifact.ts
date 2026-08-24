@@ -2,6 +2,7 @@
 
 import { DetectorContext, PathProbeResult } from "./types.js";
 import { FindingInput } from "../core/findings.js";
+import { redactBodyValues } from "../core/evidence.js";
 
 /**
  * Detects publicly exposed artifacts: .git repos, .env files, OpenAPI specs,
@@ -51,10 +52,8 @@ export function runLeakedArtifactDetector(ctx: DetectorContext): FindingInput[] 
             path: item.path,
             url: item.url,
             status: item.status,
-            // Mask actual secret values in evidence
-            contentSnippet: trimmedBody
-              .slice(0, 500)
-              .replace(/(=\s*)[^\r\n]+/g, "$1[REDACTED]"),
+            // Redact before slicing so a value cut mid-token cannot survive
+            contentSnippet: redactBodyValues(trimmedBody).slice(0, 500),
           },
         });
       }
@@ -86,6 +85,7 @@ export function runLeakedArtifactDetector(ctx: DetectorContext): FindingInput[] 
         trimmedBody.startsWith("{")
       ) {
         const isEnvActuator = item.path.includes("/env");
+        const snippet = isEnvActuator ? redactBodyValues(trimmedBody) : trimmedBody;
         findings.push({
           detector: "leaked-artifact",
           severity: isEnvActuator ? "critical" : "high",
@@ -95,7 +95,7 @@ export function runLeakedArtifactDetector(ctx: DetectorContext): FindingInput[] 
             path: item.path,
             url: item.url,
             status: item.status,
-            contentSnippet: trimmedBody.slice(0, 500),
+            contentSnippet: snippet.slice(0, 500),
           },
         });
       }
@@ -112,11 +112,12 @@ export function runLeakedArtifactDetector(ctx: DetectorContext): FindingInput[] 
           severity: "high",
           title: `Exposed Apache Server Status (${ctx.host})`,
           description: `Apache server-status page on ${ctx.host} is publicly reachable, leaking active worker requests, client IPs, and server statistics.`,
+          // No snippet: this page lists the client IPs of the target's real
+          // visitors, and the path and status already prove the exposure.
           evidence: {
             path: item.path,
             url: item.url,
             status: item.status,
-            contentSnippet: trimmedBody.slice(0, 500),
           },
         });
       }

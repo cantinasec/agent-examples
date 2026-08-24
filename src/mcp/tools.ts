@@ -5,7 +5,7 @@ import { z } from "zod";
 import { assertInScope, listTargets, putTargets, addTarget, removeTarget, normalizeHost } from "../core/scope.js";
 import { listFindings, getFinding, triageFinding, FindingState } from "../core/findings.js";
 import { requirePerm, Role } from "../auth/principals.js";
-import { getEvidenceBlob } from "../core/evidence.js";
+import { getEvidenceBlob, redactHeaders } from "../core/evidence.js";
 
 export interface ToolContext {
   env: Env;
@@ -137,7 +137,7 @@ export function registerAllTools(server: McpServer, ctx: ToolContext): void {
           headers: { "User-Agent": "Mozilla/5.0 (ExposureAgent/1.0)" },
         });
         probeStatus = probeResp.status;
-        headers = Object.fromEntries(probeResp.headers);
+        headers = redactHeaders(Object.fromEntries(probeResp.headers));
         const text = await probeResp.text();
         previewText = text.slice(0, 5000);
       } catch (err: any) {

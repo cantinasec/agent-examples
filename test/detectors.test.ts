@@ -213,6 +213,38 @@ describe("leaked-artifact Detector", () => {
     const findings = runLeakedArtifactDetector(ctx);
     expect(findings.some((f) => f.title.includes(".env"))).toBe(true);
     expect(findings[0].severity).toBe("critical");
+
+    // Evidence is stored durably, so the target's secrets must not reach it.
+    const evidence = JSON.stringify(findings[0].evidence);
+    expect(evidence).not.toContain("secret123");
+    expect(evidence).not.toContain("supersecret");
+    expect(evidence).toContain("DB_PASSWORD");
+    expect(evidence).toContain("[REDACTED]");
+  });
+
+  it("redacts values but keeps property names for /actuator/env", () => {
+    const ctx: DetectorContext = {
+      host: "spring.example.com",
+      probe: { url: "https://spring.example.com", status: 200, headers: {}, body: "" },
+      paths: [
+        {
+          path: "/actuator/env",
+          url: "https://spring.example.com/actuator/env",
+          status: 200,
+          headers: {},
+          body: '{"_links":{},"propertySources":[{"properties":{"spring.datasource.password":{"value":"hunter2"}}}]}',
+        },
+      ],
+    };
+
+    const findings = runLeakedArtifactDetector(ctx);
+    const actuator = findings.find((f) => f.title.includes("Actuator"));
+    expect(actuator?.severity).toBe("critical");
+
+    const evidence = JSON.stringify(actuator?.evidence);
+    expect(evidence).not.toContain("hunter2");
+    expect(evidence).toContain("spring.datasource.password");
+    expect(evidence).toContain("[REDACTED]");
   });
 
   it("detects exposed Swagger/OpenAPI spec", () => {
@@ -274,9 +306,9 @@ describe("leaked-artifact Detector", () => {
 describe("dev-staging-origin Detector", () => {
   it("detects dev/staging naming reachable publicly", () => {
     const ctx: DetectorContext = {
-      host: "dev.api.internal.com",
+      host: "dev.api.internal.example",
       probe: {
-        url: "https://dev.api.internal.com",
+        url: "https://dev.api.internal.example",
         status: 200,
         headers: {},
         body: "OK",

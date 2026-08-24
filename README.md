@@ -92,6 +92,8 @@ Verify: each fixture produces the expected detector and authenticated/login fixt
 
 `accepted_risk` and `false_positive` remain analyst decisions. A network error must fail the scan rather than masquerade as a clean result, which is why `TargetWorkflow` does not swallow failed path probes.
 
+Evidence is the other half of this. Findings and Workflow step results both persist, so `redactHeaders` and `redactBodyValues` in `src/core/evidence.ts` mask credential-bearing header values and the values in `/.env` and `/actuator/env` bodies at the moment of capture, before the step returns. Key and property names survive, which is what makes a finding actionable. A scanner that files a report containing the target's database password has moved the exposure, not found it.
+
 ```bash
 npm test -- test/findings.test.ts
 ```

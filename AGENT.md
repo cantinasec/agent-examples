@@ -23,6 +23,7 @@ Outbound probes and browser renderings **fail closed** if the hostname is not ac
 - **MCP Host & Origin filtering**: Requests to `/mcp` must match `MCP_HOSTNAME` and `MCP_ORIGIN_HOSTNAME` configured in `wrangler.jsonc`. Mismatched hosts return `400 Bad Request: invalid MCP host`.
 - **Deterministic findings diffing**: `syncDetectorFindings()` marks missing findings as `fixed` on subsequent scans and reopens fixed ones if rediscovered. Do not delete findings rows directly.
 - **Read-only probes**: Probers and detectors must only issue GET/HEAD requests with manual redirect handling; never execute mutating payloads or fuzzing loops.
+- **Evidence redaction happens at capture**: `step.do` results persist durably, so `probe-root` and `probe-paths` apply `redactHeaders` and (for `CREDENTIAL_PATHS`) `redactBodyValues` before returning. Never move this masking downstream into a detector, and never store `Object.fromEntries(resp.headers)` raw.
 - **Workers AI advisory fallback**: In `TargetWorkflow`, `@cf/meta/llama-3.3-70b-instruct-fp8-fast` evaluates rendered markdown only when HTTP 200 returns application content with no deterministic matches. AI failures must not abort scan persistence.
 - **Browser Run error handling**: `BROWSER.quickAction()` requires `"remote": true` in `wrangler.jsonc`. If browser rendering fails or is unavailable, `TargetWorkflow` falls back to raw HTTP evidence.
 
