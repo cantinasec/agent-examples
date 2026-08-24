@@ -28,7 +28,7 @@ describe("Auth & Cloudflare Access JWT Verification", () => {
     const token = await new SignJWT({
       sub: "service-token-client-id",
       common_name: "my-service-token",
-      email: "agent@myteam.com",
+      email: "agent@example.com",
       type: "service",
     })
       .setProtectedHeader({ alg: "RS256", kid: "test-key-id" })
@@ -40,7 +40,7 @@ describe("Auth & Cloudflare Access JWT Verification", () => {
     const identity = await verifyAccessJwt(token, teamDomain, expectedAud, jwks);
     expect(identity.clientId).toBe("my-service-token");
     expect(identity.sub).toBe("service-token-client-id");
-    expect(identity.email).toBe("agent@myteam.com");
+    expect(identity.email).toBe("agent@example.com");
   });
 
   it("rejects request missing Access JWT header", async () => {

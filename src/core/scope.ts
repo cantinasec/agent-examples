@@ -18,7 +18,7 @@ export interface PutTargetInput {
 
 /**
  * Normalizes a URL or hostname to a clean lowercase FQDN without port or path.
- * Strict parsing prevents domain suffix hijacking (e.g. evil.com?host=target.com).
+ * Strict parsing prevents domain suffix hijacking (e.g. attacker.invalid?host=example.com).
  */
 export function normalizeHost(urlOrHost: string): string {
   const trimmed = urlOrHost.trim();

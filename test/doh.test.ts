@@ -40,7 +40,7 @@ describe("DoH (DNS-over-HTTPS) Resolution", () => {
             CD: false,
             Question: [{ name: "example.com", type: 28 }],
             Answer: [
-              { name: "example.com", type: 28, TTL: 300, data: "2606:2800:220:1:248:1893:25c8:1946" },
+              { name: "example.com", type: 28, TTL: 300, data: "2001:db8::10" },
             ],
           })
         );
@@ -55,7 +55,7 @@ describe("DoH (DNS-over-HTTPS) Resolution", () => {
           CD: false,
           Question: [{ name: "example.com", type: 1 }],
           Answer: [
-            { name: "example.com", type: 1, TTL: 300, data: "93.184.216.34" },
+            { name: "example.com", type: 1, TTL: 300, data: "192.0.2.10" },
           ],
         })
       );
@@ -63,8 +63,8 @@ describe("DoH (DNS-over-HTTPS) Resolution", () => {
 
     const res = await resolveHostDoh("example.com");
     expect(res.status).toBe("resolved");
-    expect(res.aRecords).toEqual(["93.184.216.34"]);
-    expect(res.aaaaRecords).toEqual(["2606:2800:220:1:248:1893:25c8:1946"]);
+    expect(res.aRecords).toEqual(["192.0.2.10"]);
+    expect(res.aaaaRecords).toEqual(["2001:db8::10"]);
     expect(res.allIps).toHaveLength(2);
   });
 

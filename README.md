@@ -4,7 +4,7 @@ This tutorial builds a read-only agent that scans an explicitly approved set of 
 
 The repository contains the finished implementation. Follow the source in the order below if you want to build it yourself; skip to [Deploy your copy](#deploy-your-copy) if you only want to run it.
 
-Last locally verified: 2026-08-19 with Node.js 22 and the dependency versions in `package-lock.json`. Cloudflare deployment requires account-specific resources and cannot be verified by this repository's automated tests.
+Last locally verified: 2026-08-24 with Node.js 22.23.2 and the dependency versions in `package-lock.json`. Cloudflare deployment requires account-specific resources and cannot be verified by this repository's automated tests.
 
 ## What you will build
 
@@ -66,7 +66,7 @@ Start with `migrations/0001_init.sql` and `src/core/scope.ts`.
 
 The `targets` table stores the principal that added a host, an external authorization reference, and an expiry. `normalizeHost` converts URLs and hostnames to the same exact lowercase key. `assertInScope` is the only function a network-capable module should call before touching a target.
 
-Keep hostname matching exact. Treating `example.com.evil.net` as a child of `example.com` would turn the scope registry into an SSRF primitive.
+Keep hostname matching exact. Treating `example.com.attacker.invalid` as a child of `example.com` would turn the scope registry into an SSRF primitive.
 
 ```bash
 npm test -- test/scope.test.ts

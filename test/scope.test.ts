@@ -20,7 +20,7 @@ describe("Scope Registry & assertInScope", () => {
   it("normalizes URLs and hostnames strictly", () => {
     expect(normalizeHost("https://example.com/some/path?query=1")).toBe("example.com");
     expect(normalizeHost("http://api.sub.example.com:8080/")).toBe("api.sub.example.com");
-    expect(normalizeHost("TARGET.COM")).toBe("target.com");
+    expect(normalizeHost("EXAMPLE.COM")).toBe("example.com");
     expect(normalizeHost("192.0.2.1")).toBe("192.0.2.1");
     expect(() => normalizeHost("")).toThrow();
   });
@@ -39,12 +39,12 @@ describe("Scope Registry & assertInScope", () => {
   });
 
   it("rejects unknown host not in registry", async () => {
-    await expect(assertInScope("unknown.com", db)).rejects.toThrow(
-      "Host 'unknown.com' is not in the scope registry"
+    await expect(assertInScope("unknown.invalid", db)).rejects.toThrow(
+      "Host 'unknown.invalid' is not in the scope registry"
     );
   });
 
-  it("rejects lookalike hostnames (e.g. example.com.evil.net)", async () => {
+  it("rejects lookalike hostnames (e.g. example.com.attacker.invalid)", async () => {
     await addTarget(
       db,
       "principal-1",
@@ -53,11 +53,11 @@ describe("Scope Registry & assertInScope", () => {
       7
     );
 
-    await expect(assertInScope("example.com.evil.net", db)).rejects.toThrow(
-      "Host 'example.com.evil.net' is not in the scope registry"
+    await expect(assertInScope("example.com.attacker.invalid", db)).rejects.toThrow(
+      "Host 'example.com.attacker.invalid' is not in the scope registry"
     );
-    await expect(assertInScope("evil-example.com", db)).rejects.toThrow(
-      "Host 'evil-example.com' is not in the scope registry"
+    await expect(assertInScope("attacker-example.invalid", db)).rejects.toThrow(
+      "Host 'attacker-example.invalid' is not in the scope registry"
     );
   });
 
@@ -96,12 +96,12 @@ describe("Scope Registry & assertInScope", () => {
     const past = Date.now() - 10000;
     await db
       .prepare(
-        "INSERT INTO targets (host, status, added_by_principal, authorization_ref, added_at, expires_at) VALUES ('expired.com', 'active', 'p1', 'ref1', ?, ?)"
+        "INSERT INTO targets (host, status, added_by_principal, authorization_ref, added_at, expires_at) VALUES ('expired.example', 'active', 'p1', 'ref1', ?, ?)"
       )
       .bind(past - 86400000, past)
       .run();
 
-    await expect(assertInScope("expired.com", db)).rejects.toThrow(
+    await expect(assertInScope("expired.example", db)).rejects.toThrow(
       "scope attestation expired"
     );
 
@@ -109,7 +109,7 @@ describe("Scope Registry & assertInScope", () => {
     expect(retiredCount).toBe(1);
 
     const targets = await listTargets(db, { status: "retired", includeExpired: true });
-    expect(targets.some((t) => t.host === "expired.com")).toBe(true);
+    expect(targets.some((t) => t.host === "expired.example")).toBe(true);
   });
 
   it("put_targets atomically replaces scope and marks omitted targets retired", async () => {

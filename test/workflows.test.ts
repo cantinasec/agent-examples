@@ -30,7 +30,7 @@ describe("Workflow Execution End-to-End", () => {
           JSON.stringify({
             Status: 0,
             Question: [{ name: host, type: 1 }],
-            Answer: [{ name: host, type: 1, TTL: 300, data: "93.184.216.34" }],
+            Answer: [{ name: host, type: 1, TTL: 300, data: "192.0.2.10" }],
           })
         );
       }
@@ -121,7 +121,7 @@ describe("Workflow Execution End-to-End", () => {
       if (urlString.includes("dns-query")) {
         return new Response(JSON.stringify({
           Status: 0,
-          Answer: [{ name: host, type: 1, TTL: 300, data: "93.184.216.34" }],
+          Answer: [{ name: host, type: 1, TTL: 300, data: "192.0.2.10" }],
         }));
       }
       if (urlString === `https://${host}`) {
