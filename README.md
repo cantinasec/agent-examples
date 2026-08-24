@@ -160,11 +160,13 @@ Verify: TypeScript reports no errors.
 
 ## Deploy your copy
 
-The checked-in `wrangler.jsonc` contains visible placeholders. Replace them; do not deploy the example domain or database ID.
+The checked-in `wrangler.jsonc` contains visible placeholders. Replace them; do not deploy the example hostname, team domain, or AUD tag.
 
 ### 1. Choose the custom hostname
 
 Replace `security-agent.example.com` in `routes`, `MCP_HOSTNAME`, and `MCP_ORIGIN_HOSTNAME` with the same hostname in your Cloudflare zone.
+
+`handleMcpRequest` accepts only `MCP_HOSTNAME`, with no standing exception for loopback, so the Host check cannot be turned into a DNS-rebinding hole by a stray production deploy. To run `wrangler dev`, point both vars at `localhost` in `.dev.vars` rather than adding the hostname back to the Worker.
 
 Verify:
 

@@ -31,7 +31,10 @@ export function getMcpHandler(env: Env, allowedHostnames: string[], clientId: st
 
 export async function handleMcpRequest(request: Request, env: Env): Promise<Response> {
   const requestUrl = new URL(request.url);
-  const allowedHosts = new Set([env.MCP_HOSTNAME, "localhost", "127.0.0.1"]);
+  // Only the configured hostname is accepted. Local development sets
+  // MCP_HOSTNAME and MCP_ORIGIN_HOSTNAME to localhost instead of the Worker
+  // shipping a standing exception for it.
+  const allowedHosts = new Set([env.MCP_HOSTNAME]);
   if (!allowedHosts.has(requestUrl.hostname)) {
     return new Response(JSON.stringify({ error: "Bad Request: invalid MCP host" }), {
       status: 400,
@@ -81,7 +84,7 @@ export async function handleMcpRequest(request: Request, env: Env): Promise<Resp
   const clientId = principal.client_id;
   const role = principal.role;
 
-  const handler = getMcpHandler(env, [env.MCP_HOSTNAME, "localhost", "127.0.0.1"], clientId);
+  const handler = getMcpHandler(env, [env.MCP_HOSTNAME], clientId);
 
   return await handler.fetch(request, {
     authInfo: {
